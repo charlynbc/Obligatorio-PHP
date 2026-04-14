@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuestro Menú - Restaurante</title>
+    <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+    <header>
+        <h1>Bienvenido a Nuestro Restaurante</h1>
+        <p>Conoce nuestras delicias</p>
+        <a href="{{LOGIN_URL}}">Iniciar Sesión</a> |
+        <a href="{{REGISTRO_URL}}">Registrarse</a>
+    </header>
+
+    <hr>
+
+    <main>
+        <h2>Menú Disponible</h2>
+        <div class="menu-container">
+            {{MENU_CARDS}}
+        </div>
+    </main>
+</body>
+</html>
