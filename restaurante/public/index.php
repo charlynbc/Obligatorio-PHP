@@ -6,6 +6,11 @@ if (php_sapi_name() === 'cli-server' && is_file(__DIR__ . $_SERVER['REQUEST_URI'
     return false;
 }
 
+// Sesiones para autenticación básica (registro/login/logout)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Define la ruta base del proyecto (un nivel arriba de public/)
 define('BASE_PATH', __DIR__ . '/../');
 
