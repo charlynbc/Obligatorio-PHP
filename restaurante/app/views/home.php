@@ -37,8 +37,18 @@ if ($template === false) {
     return;
 }
 
+$userNav = '<a href="/?controller=Usuario&action=login">Iniciar Sesión</a> | '
+    . '<a href="/?controller=Usuario&action=registro">Registrarse</a>';
+
+if (!empty($_SESSION['user_id'])) {
+    $userName = htmlspecialchars($_SESSION['user_name'] ?? 'Usuario', ENT_QUOTES, 'UTF-8');
+    $userRole = htmlspecialchars($_SESSION['user_role'] ?? 'cliente', ENT_QUOTES, 'UTF-8');
+    $userNav = '<span>Hola, ' . $userName . ' (' . $userRole . ')</span> | '
+        . '<a href="/?controller=Usuario&action=logout">Cerrar Sesión</a>';
+}
+
 echo str_replace(
-    ['{{LOGIN_URL}}', '{{REGISTRO_URL}}', '{{MENU_CARDS}}'],
-    ['/?controller=Usuario&action=login', '/?controller=Usuario&action=registro', $menuCards],
+    ['{{USER_NAV}}', '{{MENU_CARDS}}'],
+    [$userNav, $menuCards],
     $template
 );
