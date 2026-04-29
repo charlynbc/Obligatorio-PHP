@@ -3,8 +3,16 @@
 // Renderizador PHP: arma el contenido dinámico y lo inyecta en una plantilla HTML pura.
 
 $menuCards = '';
-$isAdmin = !empty($_SESSION['user_id']) && (($_SESSION['user_role'] ?? '') === 'admin');
+$isAdmin   = !empty($_SESSION['user_id']) && (($_SESSION['user_role'] ?? '') === 'admin');
+$isLogged  = !empty($_SESSION['user_id']);
 $csrfToken = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
+
+// Badge de carrito
+$cartCount = 0;
+if ($isLogged) {
+    require_once BASE_PATH . 'app/Models/CarritoModel.php';
+    $cartCount = (new CarritoModel())->contarItems((int) $_SESSION['user_id']);
+}
 
 $menuFeedback = '';
 if (!empty($_GET['menu_success'])) {
@@ -50,6 +58,17 @@ if (!empty($menus)) {
                 . '</div>';
         }
 
+        $cartBtn = '';
+        if ($isLogged && !$isAdmin && $id > 0) {
+            $cartBtn = '<form method="POST" action="/?controller=Carrito&action=agregar" class="mt-2">'
+                . '<input type="hidden" name="csrf_token" value="' . $csrfToken . '">'
+                . '<input type="hidden" name="plato_id" value="' . $id . '">'
+                . '<button type="submit" class="btn btn-dark btn-sm w-100"><i class="bi bi-cart-plus"></i> Agregar al carrito</button>'
+                . '</form>';
+        } elseif (!$isLogged && $id > 0) {
+            $cartBtn = '<a href="/?controller=Usuario&action=login" class="btn btn-outline-dark btn-sm w-100 mt-2"><i class="bi bi-cart-plus"></i> Agregar al carrito</a>';
+        }
+
         $menuCards .= '<div class="col">'
             . '<div class="card h-100 shadow-sm">'
             . $imagen
@@ -59,6 +78,7 @@ if (!empty($menus)) {
             . '<p class="card-text text-muted flex-grow-1">' . $descripcion . '</p>'
             . '<p class="precio-badge text-success mt-2">$' . $precio . '</p>'
             . $adminActions
+            . $cartBtn
             . '</div>'
             . '</div>'
             . '</div>';
@@ -81,7 +101,9 @@ $userNav = '<li class="nav-item"><a class="nav-link" href="/?controller=Usuario&
 if (!empty($_SESSION['user_id'])) {
     $userName = htmlspecialchars($_SESSION['user_name'] ?? 'Usuario', ENT_QUOTES, 'UTF-8');
     $userRole = htmlspecialchars($_SESSION['user_role'] ?? 'cliente', ENT_QUOTES, 'UTF-8');
-    $userNav = '<li class="nav-item"><span class="navbar-text text-light me-2"><i class="bi bi-person-circle"></i> ' . $userName . ' <span class="badge bg-secondary">' . $userRole . '</span></span></li>'
+    $badgeHtml = $cartCount > 0 ? ' <span class="badge bg-danger rounded-pill">' . $cartCount . '</span>' : '';
+    $userNav = '<li class="nav-item"><a class="nav-link position-relative" href="/?controller=Carrito&action=index"><i class="bi bi-cart3"></i>' . $badgeHtml . '</a></li>'
+        . '<li class="nav-item"><span class="navbar-text text-light me-2"><i class="bi bi-person-circle"></i> ' . $userName . ' <span class="badge bg-secondary">' . $userRole . '</span></span></li>'
         . '<li class="nav-item"><a class="nav-link" href="/?controller=Usuario&action=logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>';
 
     if ($isAdmin) {
