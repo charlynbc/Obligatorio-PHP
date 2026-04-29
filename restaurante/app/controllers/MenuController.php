@@ -2,6 +2,7 @@
 // Archivo: app/controllers/MenuController.php
 
 require_once BASE_PATH . 'app/Models/MenuModel.php';
+require_once BASE_PATH . 'app/Helpers/ImageUploader.php';
 
 class MenuController {
 
@@ -69,7 +70,6 @@ class MenuController {
         $descripcion = trim($_POST['descripcion'] ?? '');
         $precio = trim($_POST['precio'] ?? '');
         $categoria = trim($_POST['categoria'] ?? '');
-        $imagenUrl = trim($_POST['imagen_url'] ?? '');
 
         if ($nombre === '' || $descripcion === '' || $precio === '' || !is_numeric($precio) || (float) $precio < 0) {
             $error = 'Completá nombre, descripción y un precio válido.';
@@ -78,10 +78,29 @@ class MenuController {
                 'descripcion' => $descripcion,
                 'precio' => $precio,
                 'categoria' => $categoria,
-                'imagen_url' => $imagenUrl,
+                'imagen_url' => '',
             ];
             require_once BASE_PATH . 'app/views/menu/crear.php';
             return;
+        }
+
+        // Procesar imagen
+        $imagenUrl = '';
+        if (!empty($_FILES['imagen'])) {
+            $uploadResult = ImageUploader::upload($_FILES['imagen'], null, BASE_PATH);
+            if (!$uploadResult['success']) {
+                $error = $uploadResult['error'];
+                $menu = [
+                    'nombre' => $nombre,
+                    'descripcion' => $descripcion,
+                    'precio' => $precio,
+                    'categoria' => $categoria,
+                    'imagen_url' => '',
+                ];
+                require_once BASE_PATH . 'app/views/menu/crear.php';
+                return;
+            }
+            $imagenUrl = $uploadResult['path'];
         }
 
         $created = $this->menuModel->createMenu($nombre, $descripcion, $precio, $categoria, $imagenUrl);
@@ -92,7 +111,7 @@ class MenuController {
                 'descripcion' => $descripcion,
                 'precio' => $precio,
                 'categoria' => $categoria,
-                'imagen_url' => $imagenUrl,
+                'imagen_url' => '',
             ];
             require_once BASE_PATH . 'app/views/menu/crear.php';
             return;
@@ -138,7 +157,6 @@ class MenuController {
         $descripcion = trim($_POST['descripcion'] ?? '');
         $precio = trim($_POST['precio'] ?? '');
         $categoria = trim($_POST['categoria'] ?? '');
-        $imagenUrl = trim($_POST['imagen_url'] ?? '');
 
         if ($id === null || !ctype_digit((string) $id)) {
             http_response_code(400);
@@ -148,29 +166,31 @@ class MenuController {
 
         if ($nombre === '' || $descripcion === '' || $precio === '' || !is_numeric($precio) || (float) $precio < 0) {
             $error = 'Completá nombre, descripción y un precio válido.';
-            $menu = [
-                'id' => (int) $id,
-                'nombre' => $nombre,
-                'descripcion' => $descripcion,
-                'precio' => $precio,
-                'categoria' => $categoria,
-                'imagen_url' => $imagenUrl,
-            ];
+            $menu = $this->menuModel->findById((int) $id);
             require_once BASE_PATH . 'app/views/menu/editar.php';
             return;
+        }
+
+        // Obtener plato actual
+        $currentMenu = $this->menuModel->findById((int) $id);
+        $imagenUrl = $currentMenu['imagen_url'] ?? '';
+
+        // Procesar imagen si se subió una nueva
+        if (!empty($_FILES['imagen'])) {
+            $uploadResult = ImageUploader::upload($_FILES['imagen'], $imagenUrl, BASE_PATH);
+            if (!$uploadResult['success']) {
+                $error = $uploadResult['error'];
+                $menu = $currentMenu;
+                require_once BASE_PATH . 'app/views/menu/editar.php';
+                return;
+            }
+            $imagenUrl = $uploadResult['path'];
         }
 
         $updated = $this->menuModel->updateMenu((int) $id, $nombre, $descripcion, $precio, $categoria, $imagenUrl);
         if (!$updated) {
             $error = 'No se pudo actualizar el plato. Intentá nuevamente.';
-            $menu = [
-                'id' => (int) $id,
-                'nombre' => $nombre,
-                'descripcion' => $descripcion,
-                'precio' => $precio,
-                'categoria' => $categoria,
-                'imagen_url' => $imagenUrl,
-            ];
+            $menu = $currentMenu;
             require_once BASE_PATH . 'app/views/menu/editar.php';
             return;
         }
@@ -194,6 +214,15 @@ class MenuController {
             http_response_code(400);
             echo 'ID de plato inválido.';
             return;
+        }
+
+        // Obtener el plato para eliminar su imagen
+        $menu = $this->menuModel->findById((int) $id);
+        if ($menu && !empty($menu['imagen_url'])) {
+            $imagePath = BASE_PATH . 'public/' . $menu['imagen_url'];
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
         }
 
         $this->menuModel->deleteMenu((int) $id);

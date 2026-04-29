@@ -29,7 +29,7 @@ $csrfToken = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'
             </p>
         <?php endif; ?>
 
-        <form method="POST" action="/?controller=Menu&action=actualizar">
+        <form method="POST" action="/?controller=Menu&action=actualizar" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
             <input type="hidden" name="id" value="<?php echo $safeId; ?>">
 
@@ -45,8 +45,15 @@ $csrfToken = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'
             <label for="categoria">Categoría</label><br>
             <input id="categoria" name="categoria" type="text" value="<?php echo $safeCategoria; ?>" style="width: 100%; margin-bottom: 12px;"><br>
 
-            <label for="imagen_url">URL de imagen</label><br>
-            <input id="imagen_url" name="imagen_url" type="url" value="<?php echo $safeImagenUrl; ?>" style="width: 100%; margin-bottom: 16px;"><br>
+            <label for="imagen">Imagen del plato</label><br>
+            <?php if (!empty($menu['imagen_url'])): ?>
+                <div style="margin-bottom: 12px;">
+                    <img src="/<?php echo htmlspecialchars($menu['imagen_url'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($menu['nombre'], ENT_QUOTES, 'UTF-8'); ?>" style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                    <p style="font-size: 0.9em; color: #666; margin-top: 8px;">Imagen actual</p>
+                </div>
+            <?php endif; ?>
+            <input id="imagen" name="imagen" type="file" accept="image/*" style="width: 100%; margin-bottom: 16px;"><br>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 16px;">Subí una nueva imagen para reemplazar (opcional)</p>
 
             <button type="submit">Actualizar Plato</button>
         </form>
