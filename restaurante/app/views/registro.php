@@ -1,7 +1,6 @@
 <?php
 $safeName = htmlspecialchars($name ?? '', ENT_QUOTES, 'UTF-8');
 $safeEmail = htmlspecialchars($email ?? '', ENT_QUOTES, 'UTF-8');
-$safeRole = ($role ?? 'cliente') === 'admin' ? 'admin' : 'cliente';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -35,12 +34,6 @@ $safeRole = ($role ?? 'cliente') === 'admin' ? 'admin' : 'cliente';
 
             <label for="password">Contraseña</label><br>
             <input id="password" name="password" type="password" required style="width: 100%; margin-bottom: 12px;"><br>
-
-            <label for="role">Rol</label><br>
-            <select id="role" name="role" style="width: 100%; margin-bottom: 16px;">
-                <option value="cliente" <?php echo $safeRole === 'cliente' ? 'selected' : ''; ?>>Cliente</option>
-                <option value="admin" <?php echo $safeRole === 'admin' ? 'selected' : ''; ?>>Admin</option>
-            </select><br>
 
             <button type="submit">Registrarme</button>
         </form>

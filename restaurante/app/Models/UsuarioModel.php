@@ -1,5 +1,5 @@
 <?php
-// Archivo: app/models/UsuarioModel.php
+// Archivo: app/Models/UsuarioModel.php
 
 require_once BASE_PATH . 'app/config/Database.php';
 

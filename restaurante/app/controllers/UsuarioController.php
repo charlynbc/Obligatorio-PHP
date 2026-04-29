@@ -15,26 +15,21 @@ class UsuarioController {
             $name = trim($_POST['name'] ?? '');
             $email = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
-            $role = $_POST['role'] ?? 'cliente';
-
-            $allowedRoles = ['admin', 'cliente'];
-            if (!in_array($role, $allowedRoles, true)) {
-                $role = 'cliente';
-            }
+            $role = 'cliente';
 
             if ($name === '' || $email === '' || $password === '') {
-                $this->renderRegistro('Completá todos los campos.', $name, $email, $role);
+                $this->renderRegistro('Completá todos los campos.', $name, $email);
                 return;
             }
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $this->renderRegistro('El email no tiene un formato válido.', $name, $email, $role);
+                $this->renderRegistro('El email no tiene un formato válido.', $name, $email);
                 return;
             }
 
             $existingUser = $this->usuarioModel->findByEmail($email);
             if ($existingUser) {
-                $this->renderRegistro('Ya existe una cuenta con ese email.', $name, $email, $role);
+                $this->renderRegistro('Ya existe una cuenta con ese email.', $name, $email);
                 return;
             }
 
@@ -42,7 +37,7 @@ class UsuarioController {
             $created = $this->usuarioModel->createUser($name, $email, $hashedPassword, $role);
 
             if (!$created) {
-                $this->renderRegistro('No se pudo registrar el usuario. Intentá nuevamente.', $name, $email, $role);
+                $this->renderRegistro('No se pudo registrar el usuario. Intentá nuevamente.', $name, $email);
                 return;
             }
 
@@ -108,7 +103,7 @@ class UsuarioController {
         exit;
     }
 
-    private function renderRegistro($error = '', $name = '', $email = '', $role = 'cliente') {
+    private function renderRegistro($error = '', $name = '', $email = '') {
         require BASE_PATH . 'app/views/registro.php';
     }
 

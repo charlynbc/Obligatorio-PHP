@@ -11,6 +11,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Define la ruta base del proyecto (un nivel arriba de public/)
 define('BASE_PATH', __DIR__ . '/../');
 
