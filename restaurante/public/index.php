@@ -18,18 +18,33 @@ if (empty($_SESSION['csrf_token'])) {
 // Define la ruta base del proyecto (un nivel arriba de public/)
 define('BASE_PATH', __DIR__ . '/../');
 
-// 1. Requerir la conexión a la base de datos
+// 1. Requerir la conexión a la base de datos y helpers base
 require_once BASE_PATH . 'app/config/Database.php';
+require_once BASE_PATH . 'app/Helpers/Auth.php';
 
 // 2. Capturar qué Controlador y qué Acción pide el usuario a través de la URL.
 // Si no piden nada, por defecto cargaremos el "MenuController" y la acción "index" (Homepage)
 $controllerName = isset($_GET['controller']) ? $_GET['controller'] . 'Controller' : 'MenuController';
 $actionName     = isset($_GET['action'])     ? $_GET['action']                    : 'index';
 
-// 3. Construir la ruta del archivo del controlador que se está pidiendo
+// 3. Control centralizado de permisos por ruta
+//    Formato: 'Controlador' => ['accion1', 'accion2', ...]
+$adminOnlyRoutes = [
+    'Menu' => ['crear', 'guardar', 'editar', 'actualizar', 'eliminar'],
+];
+
+$baseController = str_replace('Controller', '', $controllerName);
+if (
+    isset($adminOnlyRoutes[$baseController]) &&
+    in_array($actionName, $adminOnlyRoutes[$baseController], true)
+) {
+    Auth::requireAdmin();
+}
+
+// 4. Construir la ruta del archivo del controlador que se está pidiendo
 $controllerPath = BASE_PATH . 'app/controllers/' . $controllerName . '.php';
 
-// 4. Verificar si ese controlador existe físicamente en nuestras carpetas
+// 5. Verificar si ese controlador existe físicamente en nuestras carpetas
 if (file_exists($controllerPath)) {
     require_once $controllerPath;
 
