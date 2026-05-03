@@ -12,19 +12,19 @@ class MenuModel {
         $this->conn = $db->getConnection();
     }
 
-    // Método para obtener todos los platos del menú
-    public function getAllMenus() {
-        // Tip: se puede agregar "ORDER BY precio ASC" para el requisito opcional de ordenar
-        $query = "SELECT * FROM platos";
+    public function getAllMenus(string $orderBy = 'id'): array {
+        $allowed = [
+            'precio_asc'  => 'precio ASC',
+            'precio_desc' => 'precio DESC',
+            'nombre_asc'  => 'nombre ASC',
+            'nombre_desc' => 'nombre DESC',
+        ];
 
-        // Preparamos la consulta (buena práctica de seguridad con PDO)
+        $orderClause = $allowed[$orderBy] ?? 'id ASC';
+        $query = "SELECT * FROM platos ORDER BY " . $orderClause;
+
         $stmt = $this->conn->prepare($query);
-
-        // Ejecutamos la consulta
         $stmt->execute();
-
-        // FETCH_ASSOC devuelve los datos como arreglo asociativo
-        // (ej: $fila['nombre'] en lugar de $fila[1])
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

@@ -38,7 +38,15 @@
     </section>
 
     <main class="container pb-5">
-        <h2 class="mb-4 fw-bold">Menú Disponible</h2>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+            <h2 class="fw-bold mb-0">Menú Disponible</h2>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Ordenar menú">
+                <a href="/?orden=nombre_asc" class="btn btn-outline-dark"><i class="bi bi-sort-alpha-down"></i> A-Z</a>
+                <a href="/?orden=nombre_desc" class="btn btn-outline-dark"><i class="bi bi-sort-alpha-up"></i> Z-A</a>
+                <a href="/?orden=precio_asc" class="btn btn-outline-dark"><i class="bi bi-sort-numeric-down"></i> Menor precio</a>
+                <a href="/?orden=precio_desc" class="btn btn-outline-dark"><i class="bi bi-sort-numeric-up"></i> Mayor precio</a>
+            </div>
+        </div>
         {{MENU_FEEDBACK}}
         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
             {{MENU_CARDS}}

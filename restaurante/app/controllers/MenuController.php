@@ -30,14 +30,9 @@ class MenuController {
         }
     }
 
-    // La acción "index" es la que definimos por defecto en nuestro enrutador principal
     public function index() {
-        // 1. Le pedimos al modelo que traiga todos los platos
-        $menus = $this->menuModel->getAllMenus();
-
-        // 2. Cargamos la Vista.
-        // Como requerimos la vista justo después de declarar $menus,
-        // el archivo home.php tendrá acceso completo a esa variable.
+        $orderBy = $_GET['orden'] ?? 'id';
+        $menus = $this->menuModel->getAllMenus($orderBy);
         require_once BASE_PATH . 'app/views/home.php';
     }
 

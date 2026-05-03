@@ -5,6 +5,7 @@ require_once BASE_PATH . 'app/Models/CarritoModel.php';
 require_once BASE_PATH . 'app/Models/CompraModel.php';
 require_once BASE_PATH . 'app/Models/MenuModel.php';
 require_once BASE_PATH . 'app/Helpers/Auth.php';
+require_once BASE_PATH . 'app/Helpers/Mailer.php';
 
 class CarritoController {
     private CarritoModel $carrito;
@@ -81,13 +82,18 @@ class CarritoController {
             exit;
         }
 
-        // Crear la compra en BD
         $compraId = $this->compra->crear($userId, $items);
 
-        // Vaciar el carrito
+        // Enviar mail con el detalle de la compra
+        $userEmail = $_SESSION['user_email'] ?? '';
+        $userName  = $_SESSION['user_name'] ?? 'Cliente';
+        $total     = array_reduce($items, fn($s, $i) => $s + ($i['precio'] * $i['cantidad']), 0);
+        if ($userEmail !== '') {
+            Mailer::enviarComprobante($userEmail, $userName, $items, $total, date('d/m/Y H:i'));
+        }
+
         $this->carrito->vaciar($userId);
 
-        // Redirigir al comprobante
         header('Location: /?controller=Carrito&action=comprobante&id=' . $compraId);
         exit;
     }

@@ -7,11 +7,14 @@ $isAdmin   = !empty($_SESSION['user_id']) && (($_SESSION['user_role'] ?? '') ===
 $isLogged  = !empty($_SESSION['user_id']);
 $csrfToken = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
 
-// Badge de carrito
+// Badge de carrito y favoritos
 $cartCount = 0;
+$favoritoIds = [];
 if ($isLogged) {
     require_once BASE_PATH . 'app/Models/CarritoModel.php';
+    require_once BASE_PATH . 'app/Models/FavoritoModel.php';
     $cartCount = (new CarritoModel())->contarItems((int) $_SESSION['user_id']);
+    $favoritoIds = (new FavoritoModel())->getFavoritoIds((int) $_SESSION['user_id']);
 }
 
 $menuFeedback = '';
@@ -59,12 +62,28 @@ if (!empty($menus)) {
         }
 
         $cartBtn = '';
+        $favBtn = '';
         if ($isLogged && !$isAdmin && $id > 0) {
             $cartBtn = '<form method="POST" action="/?controller=Carrito&action=agregar" class="mt-2">'
                 . '<input type="hidden" name="csrf_token" value="' . $csrfToken . '">'
                 . '<input type="hidden" name="plato_id" value="' . $id . '">'
                 . '<button type="submit" class="btn btn-dark btn-sm w-100"><i class="bi bi-cart-plus"></i> Agregar al carrito</button>'
                 . '</form>';
+
+            $isFav = in_array($id, $favoritoIds);
+            if ($isFav) {
+                $favBtn = '<form method="POST" action="/?controller=Favorito&action=eliminar" class="mt-1">'
+                    . '<input type="hidden" name="csrf_token" value="' . $csrfToken . '">'
+                    . '<input type="hidden" name="plato_id" value="' . $id . '">'
+                    . '<button type="submit" class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-heart-fill"></i> Quitar de favoritos</button>'
+                    . '</form>';
+            } else {
+                $favBtn = '<form method="POST" action="/?controller=Favorito&action=agregar" class="mt-1">'
+                    . '<input type="hidden" name="csrf_token" value="' . $csrfToken . '">'
+                    . '<input type="hidden" name="plato_id" value="' . $id . '">'
+                    . '<button type="submit" class="btn btn-outline-secondary btn-sm w-100"><i class="bi bi-heart"></i> Favorito</button>'
+                    . '</form>';
+            }
         } elseif (!$isLogged && $id > 0) {
             $cartBtn = '<a href="/?controller=Usuario&action=login" class="btn btn-outline-dark btn-sm w-100 mt-2"><i class="bi bi-cart-plus"></i> Agregar al carrito</a>';
         }
@@ -79,6 +98,7 @@ if (!empty($menus)) {
             . '<p class="precio-badge text-success mt-2">$' . $precio . '</p>'
             . $adminActions
             . $cartBtn
+            . $favBtn
             . '</div>'
             . '</div>'
             . '</div>';
@@ -102,7 +122,9 @@ if (!empty($_SESSION['user_id'])) {
     $userName = htmlspecialchars($_SESSION['user_name'] ?? 'Usuario', ENT_QUOTES, 'UTF-8');
     $userRole = htmlspecialchars($_SESSION['user_role'] ?? 'cliente', ENT_QUOTES, 'UTF-8');
     $badgeHtml = $cartCount > 0 ? ' <span class="badge bg-danger rounded-pill">' . $cartCount . '</span>' : '';
-    $userNav = '<li class="nav-item"><a class="nav-link position-relative" href="/?controller=Carrito&action=index"><i class="bi bi-cart3"></i>' . $badgeHtml . '</a></li>'
+    $userNav = '<li class="nav-item"><a class="nav-link" href="/?controller=Favorito&action=index"><i class="bi bi-heart-fill text-danger"></i></a></li>'
+        . '<li class="nav-item"><a class="nav-link position-relative" href="/?controller=Carrito&action=index"><i class="bi bi-cart3"></i>' . $badgeHtml . '</a></li>'
+        . '<li class="nav-item"><a class="nav-link" href="/?controller=Compra&action=historial"><i class="bi bi-clock-history"></i></a></li>'
         . '<li class="nav-item"><span class="navbar-text text-light me-2"><i class="bi bi-person-circle"></i> ' . $userName . ' <span class="badge bg-secondary">' . $userRole . '</span></span></li>'
         . '<li class="nav-item"><a class="nav-link" href="/?controller=Usuario&action=logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>';
 
