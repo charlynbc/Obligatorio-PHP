@@ -2,6 +2,7 @@
 // Archivo: app/controllers/CarritoController.php
 
 require_once BASE_PATH . 'app/models/CarritoModel.php';
+require_once BASE_PATH . 'app/models/ComprasModel.php';
 
 class CarritoController {
 
@@ -10,6 +11,11 @@ class CarritoController {
         if (!isLoggedIn()) {
             header('Location: /?controller=Usuario&action=login');
             exit;
+        }
+
+        if (isAdmin()) {
+            http_response_code(403);
+            exit('Acceso denegado. El administrador del sistema no puede comprar ni usar el carrito.');
         }
     }
 
@@ -59,11 +65,14 @@ class CarritoController {
             exit;
         }
 
-        // Tiempo aleatorio entre 30 y 75 minutos
+        $comprasModel = new ComprasModel();
+        $compraId = $comprasModel->createCompra($userId, $items);
+
         $minutos = rand(30, 75);
 
         // Guardar en sesión para mostrar en la vista de confirmación
         $_SESSION['pedido_confirmado'] = [
+            'compra_id' => $compraId,
             'minutos' => $minutos,
             'items'   => $items,
             'total'   => array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $items)),

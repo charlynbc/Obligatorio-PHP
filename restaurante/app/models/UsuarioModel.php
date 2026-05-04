@@ -33,6 +33,38 @@ class UsuarioModel {
         return $row ?: null;
     }
 
+    public function getAdmins(): array {
+        $stmt = $this->conn->prepare(
+            'SELECT id, name, email, role FROM users WHERE role = :role ORDER BY name ASC, email ASC'
+        );
+        $role = 'admin';
+        $stmt->bindParam(':role', $role);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getOrCreateLocalSaleUserId(): int {
+        $email = 'ventas.local@restaurante.internal';
+
+        $stmt = $this->conn->prepare(
+            'SELECT id FROM users WHERE email = :email LIMIT 1'
+        );
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+        $existingId = $stmt->fetchColumn();
+
+        if ($existingId !== false) {
+            return (int) $existingId;
+        }
+
+        $name = 'Venta en Local';
+        $passwordHash = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+        $role = 'local';
+        $this->create($name, $email, $passwordHash, $role);
+
+        return (int) $this->conn->lastInsertId();
+    }
+
     // Actualizar nombre (y opcionalmente contraseña) — el email nunca se modifica
     public function updateProfile(int $id, string $name, ?string $newPasswordHash): void {
         if ($newPasswordHash !== null) {
@@ -60,6 +92,12 @@ class UsuarioModel {
         $stmt->bindParam(':email',    $email);
         $stmt->bindParam(':password', $passwordHash);
         $stmt->bindParam(':role',     $role);
+        $stmt->execute();
+    }
+
+    public function deleteById(int $id): void {
+        $stmt = $this->conn->prepare('DELETE FROM users WHERE id = :id');
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
     }
 }

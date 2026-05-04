@@ -50,7 +50,7 @@ require_once BASE_PATH . 'app/config/Database.php';
 
 // ── Router seguro: whitelist de controladores ──────────────────────────────────
 // Previene Path Traversal: solo se permiten controladores conocidos
-$allowed = ['Menu', 'Usuario', 'Carrito'];
+$allowed = ['Menu', 'Usuario', 'Carrito', 'Favoritos'];
 $c = $_GET['controller'] ?? 'Menu';
 if (!in_array($c, $allowed, true)) {
     http_response_code(404);

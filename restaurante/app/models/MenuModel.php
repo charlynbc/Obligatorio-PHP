@@ -13,9 +13,16 @@ class MenuModel {
     }
 
     // Método para obtener todos los platos del menú
-    public function getAllMenus() {
-        // Tip: se puede agregar "ORDER BY precio ASC" para el requisito opcional de ordenar
-        $query = "SELECT * FROM platos";
+    public function getAllMenus(string $sort = 'default') {
+        $orderBy = match ($sort) {
+            'precio_asc' => ' ORDER BY precio ASC, nombre ASC',
+            'precio_desc' => ' ORDER BY precio DESC, nombre ASC',
+            'nombre_asc' => ' ORDER BY nombre ASC',
+            'nombre_desc' => ' ORDER BY nombre DESC',
+            default => ' ORDER BY id ASC',
+        };
+
+        $query = 'SELECT * FROM platos' . $orderBy;
 
         // Preparamos la consulta (buena práctica de seguridad con PDO)
         $stmt = $this->conn->prepare($query);
@@ -26,6 +33,50 @@ class MenuModel {
         // FETCH_ASSOC devuelve los datos como arreglo asociativo
         // (ej: $fila['nombre'] en lugar de $fila[1])
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function findById(int $id): ?array {
+        $stmt = $this->conn->prepare('SELECT * FROM platos WHERE id = :id LIMIT 1');
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function create(string $nombre, string $descripcion, float $precio, string $categoria): void {
+        $stmt = $this->conn->prepare(
+            'INSERT INTO platos (nombre, descripcion, precio, categoria, created_at, updated_at)
+             VALUES (:nombre, :descripcion, :precio, :categoria, datetime("now"), datetime("now"))'
+        );
+        $stmt->bindParam(':nombre', $nombre);
+        $stmt->bindParam(':descripcion', $descripcion);
+        $stmt->bindParam(':precio', $precio);
+        $stmt->bindParam(':categoria', $categoria);
+        $stmt->execute();
+    }
+
+    public function update(int $id, string $nombre, string $descripcion, float $precio, string $categoria): void {
+        $stmt = $this->conn->prepare(
+            'UPDATE platos
+             SET nombre = :nombre,
+                 descripcion = :descripcion,
+                 precio = :precio,
+                 categoria = :categoria,
+                 updated_at = datetime("now")
+             WHERE id = :id'
+        );
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindParam(':nombre', $nombre);
+        $stmt->bindParam(':descripcion', $descripcion);
+        $stmt->bindParam(':precio', $precio);
+        $stmt->bindParam(':categoria', $categoria);
+        $stmt->execute();
+    }
+
+    public function delete(int $id): void {
+        $stmt = $this->conn->prepare('DELETE FROM platos WHERE id = :id');
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
     }
 
     // Método para actualizar la URL de imagen de un plato
