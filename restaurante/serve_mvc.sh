@@ -12,4 +12,4 @@ echo "Iniciando servidor PHP en http://localhost:${PORT}"
 echo "Presiona Ctrl+C para detenerlo."
 echo ""
 
-php -S 0.0.0.0:"${PORT}" index.php
+php -S 0.0.0.0:"${PORT}" -t public public/index.php

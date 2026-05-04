@@ -27,5 +27,15 @@ class MenuModel {
         // (ej: $fila['nombre'] en lugar de $fila[1])
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    // Método para actualizar la URL de imagen de un plato
+    public function updateImageUrl($id, $imageUrl) {
+        $stmt = $this->conn->prepare(
+            "UPDATE platos SET imagen_url = :imagen_url WHERE id = :id"
+        );
+        $stmt->bindParam(':imagen_url', $imageUrl);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    }
 }
 ?>
