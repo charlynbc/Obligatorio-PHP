@@ -14,12 +14,27 @@ class MenuModel {
 
     // Método para obtener todos los platos del menú
     public function getAllMenus(string $sort = 'default') {
+        $categoryOrder = "CASE categoria
+            WHEN 'Entradas' THEN 1
+            WHEN 'Ensaladas' THEN 2
+            WHEN 'Pastas' THEN 3
+            WHEN 'Pizzas' THEN 4
+            WHEN 'Principales' THEN 5
+            WHEN 'Postres' THEN 6
+            WHEN 'Bebidas sin alcohol' THEN 7
+            WHEN 'Bebidas con alcohol' THEN 8
+            WHEN 'Bebidas' THEN 7
+            ELSE 99
+        END";
+
         $orderBy = match ($sort) {
-            'precio_asc' => ' ORDER BY precio ASC, nombre ASC',
-            'precio_desc' => ' ORDER BY precio DESC, nombre ASC',
-            'nombre_asc' => ' ORDER BY nombre ASC',
-            'nombre_desc' => ' ORDER BY nombre DESC',
-            default => ' ORDER BY id ASC',
+            'categoria_asc' => ' ORDER BY ' . $categoryOrder . ' ASC, nombre ASC, id ASC',
+            'categoria_desc' => ' ORDER BY ' . $categoryOrder . ' DESC, nombre ASC, id ASC',
+            'precio_asc' => ' ORDER BY precio ASC, ' . $categoryOrder . ' ASC, nombre ASC',
+            'precio_desc' => ' ORDER BY precio DESC, ' . $categoryOrder . ' ASC, nombre ASC',
+            'nombre_asc' => ' ORDER BY nombre ASC, ' . $categoryOrder . ' ASC',
+            'nombre_desc' => ' ORDER BY nombre DESC, ' . $categoryOrder . ' ASC',
+            default => ' ORDER BY ' . $categoryOrder . ' ASC, nombre ASC, id ASC',
         };
 
         $query = 'SELECT * FROM platos' . $orderBy;

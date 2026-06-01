@@ -7,6 +7,19 @@ require_once BASE_PATH . 'app/models/UsuarioModel.php';
 
 class MenuController {
 
+    private function getMenuCategories(): array {
+        return [
+            'Entradas',
+            'Ensaladas',
+            'Pastas',
+            'Pizzas',
+            'Principales',
+            'Postres',
+            'Bebidas sin alcohol',
+            'Bebidas con alcohol',
+        ];
+    }
+
     private function requireAdmin(): void {
         if (!isAdmin()) {
             http_response_code(403);
@@ -30,14 +43,20 @@ class MenuController {
             exit;
         }
 
+        if (!in_array($categoria, $this->getMenuCategories(), true)) {
+            header('Location: /?menu_error=categoria');
+            exit;
+        }
+
         return [$nombre, $descripcion, (float) $precio, $categoria];
     }
 
     // La acción "index" es la que definimos por defecto en nuestro enrutador principal
     public function index() {
         $menuModel = new MenuModel();
-        $sort = $_GET['sort'] ?? 'default';
+        $sort = $_GET['sort'] ?? 'categoria_asc';
         $menus = $menuModel->getAllMenus($sort);
+        $menuCategories = $this->getMenuCategories();
         $editPlato = null;
         $topSelling = [];
         $salesSummary = [
@@ -206,6 +225,13 @@ class MenuController {
             exit;
         }
 
+        $menuModel = new MenuModel();
+        $plato = $menuModel->findById($id);
+        if (!$plato) {
+            header('Location: /?menu_error=noexiste');
+            exit;
+        }
+
         if (!isset($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
             header('Location: /?upload_error=1');
             exit;
@@ -235,7 +261,7 @@ class MenuController {
         }
 
         $safeExt    = $extMap[$mimeType];
-        $filename   = 'plato_' . $id . '_' . time() . '.' . $safeExt;
+        $filename   = 'plato_' . $id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $safeExt;
         $uploadDir  = BASE_PATH . 'public/img/';
         $uploadPath = $uploadDir . $filename;
 
@@ -244,8 +270,14 @@ class MenuController {
             exit;
         }
 
+        if (!empty($plato['imagen_url']) && str_starts_with($plato['imagen_url'], '/img/')) {
+            $oldImagePath = BASE_PATH . 'public' . $plato['imagen_url'];
+            if ($oldImagePath !== $uploadPath && is_file($oldImagePath)) {
+                @unlink($oldImagePath);
+            }
+        }
+
         $imageUrl  = '/img/' . $filename;
-        $menuModel = new MenuModel();
         $menuModel->updateImageUrl($id, $imageUrl);
 
         header('Location: /');

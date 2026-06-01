@@ -1,9 +1,31 @@
 <?php
 $safeId = (int) ($menu['id'] ?? 0);
+$selectedCategoria = $menu['categoria'] ?? '';
+$menuCategories = [
+    'Entradas',
+    'Ensaladas',
+    'Pastas',
+    'Pizzas',
+    'Principales',
+    'Postres',
+    'Bebidas sin alcohol',
+    'Bebidas con alcohol',
+];
+
+if ($selectedCategoria !== '' && !in_array($selectedCategoria, $menuCategories, true)) {
+    $menuCategories[] = $selectedCategoria;
+}
+
+$categoryOptions = '<option value="" disabled' . ($selectedCategoria === '' ? ' selected' : '') . '>Seleccionar categoría</option>';
+foreach ($menuCategories as $category) {
+    $selected = $category === $selectedCategoria ? ' selected' : '';
+    $escapedCategory = htmlspecialchars($category, ENT_QUOTES, 'UTF-8');
+    $categoryOptions .= '<option value="' . $escapedCategory . '"' . $selected . '>' . $escapedCategory . '</option>';
+}
+
 $safeNombre = htmlspecialchars($menu['nombre'] ?? '', ENT_QUOTES, 'UTF-8');
 $safeDescripcion = htmlspecialchars($menu['descripcion'] ?? '', ENT_QUOTES, 'UTF-8');
 $safePrecio = htmlspecialchars((string) ($menu['precio'] ?? ''), ENT_QUOTES, 'UTF-8');
-$safeCategoria = htmlspecialchars($menu['categoria'] ?? '', ENT_QUOTES, 'UTF-8');
 $safeImagenUrl = htmlspecialchars($menu['imagen_url'] ?? '', ENT_QUOTES, 'UTF-8');
 $csrfToken = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
 ?>
@@ -37,7 +59,7 @@ $csrfToken = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'
                             <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div>
                         <?php endif; ?>
 
-                        <form method="POST" action="/?controller=Menu&action=actualizar" enctype="multipart/form-data">
+                        <form method="POST" action="/?controller=Menu&action=update" enctype="multipart/form-data">
                             <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                             <input type="hidden" name="id" value="<?php echo $safeId; ?>">
 
@@ -58,7 +80,9 @@ $csrfToken = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8'
                                 </div>
                                 <div class="col-sm-6">
                                     <label for="categoria" class="form-label">Categoría</label>
-                                    <input id="categoria" name="categoria" type="text" class="form-control" value="<?php echo $safeCategoria; ?>">
+                                    <select id="categoria" name="categoria" class="form-select" required>
+                                        <?php echo $categoryOptions; ?>
+                                    </select>
                                 </div>
                             </div>
 

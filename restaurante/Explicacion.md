@@ -45,12 +45,12 @@ restaurante/
 │   │   ├── Auth.php        ← Control de sesiones y permisos
 │   │   └── ImageUploader.php ← Sube imágenes al servidor
 │   │
-│   ├── Models/
-│   │   ├── MenuModel.php   ← Consultas de la tabla "platos"
+│   ├── models/
+│   │   ├── MenuModel.php    ← Consultas de la tabla "platos"
 │   │   ├── UsuarioModel.php ← Consultas de la tabla "users"
 │   │   ├── CarritoModel.php ← Consultas de "carrito_items"
-│   │   ├── CompraModel.php  ← Consultas de "compras" y "compra_detalles"
-│   │   └── User.php        ← Clase de usuario (auxiliar)
+│   │   ├── ComprasModel.php ← Consultas de "compras" y "compra_detalles"
+│   │   └── MailService.php  ← Envío de email de confirmación
 │   │
 │   ├── controllers/
 │   │   ├── MenuController.php     ← CRUD de platos
@@ -63,12 +63,14 @@ restaurante/
 │       ├── login.php          ← Formulario de login
 │       ├── registro.php       ← Formulario de registro
 │       ├── 403.php            ← Página de acceso denegado
-│       └── menu/
-│           ├── crear.php      ← Formulario de creación de plato (admin)
-│           └── editar.php     ← Formulario de edición de plato (admin)
+│       ├── carrito.php       ← Vista activa del carrito
+│       ├── confirmacion.php  ← Pantalla inmediata luego de pagar
+│       ├── perfil.php        ← Perfil con favoritos e historial
+│       ├── menu/
+│       │   ├── crear.php      ← Formulario de creación de plato (admin)
+│       │   └── editar.php     ← Formulario de edición de plato (admin)
 │       └── carrito/
-│           ├── index.php      ← Vista del carrito con tabla de ítems
-│           └── comprobante.php ← Ticket de confirmación de compra
+│           └── comprobante.php ← Ticket persistente de compra
 │
 ├── database/
 │   ├── database.sqlite        ← BASE DE DATOS (archivo único SQLite)
@@ -129,7 +131,7 @@ El modelo ejecuta SQL con PDO y devuelve arrays de datos.
 ### 6. El controlador carga la vista
 
 ```php
-require_once BASE_PATH . 'app/views/carrito/index.php';
+require_once BASE_PATH . 'app/views/carrito.php';
 ```
 
 Las variables declaradas antes del `require_once` quedan disponibles dentro de la vista porque PHP comparte el mismo scope.
@@ -280,6 +282,7 @@ No hay archivo de rutas separado. Todo se maneja con parámetros GET:
 | `/?controller=Menu&action=editar&id=5` | MenuController | editar |
 | `/?controller=Carrito&action=index` | CarritoController | index |
 | `/?controller=Carrito&action=pagar` | CarritoController | pagar |
+| `/?controller=Carrito&action=confirmacion` | CarritoController | confirmacion |
 | `/?controller=Carrito&action=comprobante&id=3` | CarritoController | comprobante |
 
 ---
@@ -323,4 +326,4 @@ CSRF (Cross-Site Request Forgery) es un ataque donde un sitio externo hace un PO
 Cada ítem del carrito es una fila en `carrito_items` con `user_id` + `plato_id` + `cantidad`. La combinación `(user_id, plato_id)` tiene un índice UNIQUE, así que agregar el mismo plato dos veces solo aumenta la cantidad (upsert con `ON CONFLICT DO UPDATE`).
 
 **¿Qué pasa cuando se paga?**
-El controlador: 1) obtiene los ítems del carrito, 2) crea una fila en `compras` con el total, 3) crea una fila en `compra_detalles` por cada ítem (con el precio al momento de la compra), 4) vacía el carrito, 5) redirige al comprobante. Todo dentro de una transacción de BD para que o se guarda todo o no se guarda nada.
+El controlador: 1) obtiene los ítems del carrito, 2) crea una fila en `compras` con el total, 3) crea una fila en `compra_detalles` por cada ítem (con el precio al momento de la compra), 4) guarda un resumen temporal en sesión para la pantalla de confirmación, 5) vacía el carrito y 6) deja disponible un comprobante persistente consultable desde el perfil. Todo dentro de una transacción de BD para que o se guarda todo o no se guarda nada.

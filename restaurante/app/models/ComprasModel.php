@@ -94,6 +94,51 @@ class ComprasModel {
         return array_values($compras);
     }
 
+    public function getCompraByIdForUser(int $compraId, int $userId): ?array {
+        $stmt = $this->conn->prepare(
+            'SELECT c.id AS compra_id,
+                    c.total,
+                    c.created_at AS compra_fecha,
+                    cd.cantidad,
+                    cd.precio_unitario,
+                    p.nombre,
+                    p.categoria,
+                    p.imagen_url
+             FROM compras c
+             JOIN compra_detalles cd ON cd.compra_id = c.id
+             JOIN platos p ON p.id = cd.plato_id
+             WHERE c.id = :compra_id AND c.user_id = :user_id
+             ORDER BY cd.id ASC'
+        );
+        $stmt->bindParam(':compra_id', $compraId, PDO::PARAM_INT);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($rows)) {
+            return null;
+        }
+
+        $compra = [
+            'id' => (int) $rows[0]['compra_id'],
+            'fecha' => $rows[0]['compra_fecha'],
+            'total' => (float) $rows[0]['total'],
+            'items' => [],
+        ];
+
+        foreach ($rows as $row) {
+            $compra['items'][] = [
+                'nombre' => $row['nombre'],
+                'categoria' => $row['categoria'],
+                'imagen_url' => $row['imagen_url'],
+                'cantidad' => (int) $row['cantidad'],
+                'precio_unitario' => (float) $row['precio_unitario'],
+            ];
+        }
+
+        return $compra;
+    }
+
     public function getTopSellingPlatos(int $limit = 5): array {
         $stmt = $this->conn->prepare(
             'SELECT p.nombre,

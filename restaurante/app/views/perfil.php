@@ -98,6 +98,10 @@ if (!isAdmin()) {
     } else {
         foreach ($purchaseHistory as $purchase) {
             $itemsHtml = '';
+            $fechaCompraTs = strtotime($purchase['fecha']);
+            $fechaCompra = $fechaCompraTs !== false
+                ? date('d/m/Y H:i', $fechaCompraTs)
+                : $purchase['fecha'];
             foreach ($purchase['items'] as $item) {
                 $itemsHtml .= '<li class="list-group-item d-flex justify-content-between align-items-center">'
                     . '<span>' . htmlspecialchars($item['nombre']) . ' <span class="text-muted small">x' . (int) $item['cantidad'] . '</span></span>'
@@ -106,7 +110,7 @@ if (!isAdmin()) {
             }
 
             $historialHtml .= '<div class="card shadow-sm mb-3"><div class="card-body">'
-                . '<div class="d-flex justify-content-between align-items-center mb-2"><div><div class="fw-semibold">Compra #' . (int) $purchase['id'] . '</div><div class="small text-muted">' . htmlspecialchars($purchase['fecha']) . '</div></div><div class="text-end fw-bold text-success">$' . number_format((float) $purchase['total'], 2) . '</div></div>'
+                . '<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2"><div><div class="fw-semibold">Compra #' . (int) $purchase['id'] . '</div><div class="small text-muted">' . htmlspecialchars($fechaCompra) . '</div></div><div class="d-flex align-items-center gap-3 flex-wrap"><div class="text-end fw-bold text-success">$' . number_format((float) $purchase['total'], 2) . '</div><a href="/?controller=Carrito&action=comprobante&id=' . (int) $purchase['id'] . '" class="btn btn-outline-dark btn-sm"><i class="bi bi-receipt me-1"></i>Ver comprobante</a></div></div>'
                 . '<ul class="list-group list-group-flush">' . $itemsHtml . '</ul>'
                 . '</div></div>';
         }
@@ -116,7 +120,7 @@ if (!isAdmin()) {
         . '<h5 class="card-title"><i class="bi bi-heart me-2 text-danger"></i>Mis favoritos</h5>'
         . $favoritosHtml
         . '</div></div>'
-        . '<div class="card shadow-sm mt-4"><div class="card-body">'
+        . '<div class="card shadow-sm mt-4" id="historial-compras"><div class="card-body">'
         . '<h5 class="card-title"><i class="bi bi-clock-history me-2 text-primary"></i>Historial de compras</h5>'
         . $historialHtml
         . '</div></div>';

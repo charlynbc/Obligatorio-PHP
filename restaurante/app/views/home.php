@@ -61,6 +61,7 @@ if (!empty($_GET['upload_error']) || !empty($_GET['menu_error']) || !empty($_GET
         $errores = [
             'campos' => 'Completá nombre, categoría, descripción y precio.',
             'precio' => 'El precio debe ser un número mayor a 0.',
+            'categoria' => 'Seleccioná una categoría válida de la lista.',
             'id' => 'El plato seleccionado no es válido.',
             'noexiste' => 'El plato ya no existe o fue eliminado.',
         ];
@@ -103,9 +104,27 @@ if (isAdmin()) {
     $csrfValue = htmlspecialchars(csrfToken());
     $editId = (int) ($editPlato['id'] ?? 0);
     $editNombre = htmlspecialchars($editPlato['nombre'] ?? '');
-    $editCategoria = htmlspecialchars($editPlato['categoria'] ?? '');
+    $editCategoria = $editPlato['categoria'] ?? '';
     $editDescripcion = htmlspecialchars($editPlato['descripcion'] ?? '');
     $editPrecio = htmlspecialchars(isset($editPlato['precio']) ? number_format((float) $editPlato['precio'], 2, '.', '') : '');
+    $categoryOptions = $menuCategories ?? [];
+    if ($editCategoria !== '' && !in_array($editCategoria, $categoryOptions, true)) {
+        $categoryOptions[] = $editCategoria;
+    }
+
+    $buildCategoryOptions = static function (array $categories, string $selected = ''): string {
+        $options = '<option value="" disabled' . ($selected === '' ? ' selected' : '') . '>Seleccionar categoría</option>';
+        foreach ($categories as $category) {
+            $selectedAttr = $category === $selected ? ' selected' : '';
+            $escapedCategory = htmlspecialchars($category);
+            $options .= '<option value="' . $escapedCategory . '"' . $selectedAttr . '>' . $escapedCategory . '</option>';
+        }
+
+        return $options;
+    };
+
+    $editCategoryOptions = $buildCategoryOptions($categoryOptions, $editCategoria);
+    $createCategoryOptions = $buildCategoryOptions($menuCategories ?? []);
 
     $editPanel = '';
     if ($editPlato) {
@@ -120,7 +139,7 @@ if (isAdmin()) {
             . '<input type="hidden" name="id" value="' . $editId . '">'
             . '<div class="row g-3">'
             . '<div class="col-md-6"><label class="form-label">Nombre</label><input type="text" class="form-control" name="nombre" value="' . $editNombre . '" required></div>'
-            . '<div class="col-md-3"><label class="form-label">Categoría</label><input type="text" class="form-control" name="categoria" value="' . $editCategoria . '" required></div>'
+                . '<div class="col-md-3"><label class="form-label">Categoría</label><select class="form-select" name="categoria" required>' . $editCategoryOptions . '</select></div>'
             . '<div class="col-md-3"><label class="form-label">Precio</label><input type="number" class="form-control" name="precio" min="0.01" step="0.01" value="' . $editPrecio . '" required></div>'
             . '<div class="col-12"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="3" required>' . $editDescripcion . '</textarea></div>'
             . '<div class="col-12"><button type="submit" class="btn btn-warning"><i class="bi bi-save me-1"></i>Guardar cambios</button></div>'
@@ -179,7 +198,7 @@ if (isAdmin()) {
         . '<input type="hidden" name="csrf_token" value="' . $csrfValue . '">'
         . '<div class="row g-3">'
         . '<div class="col-md-4"><label class="form-label">Nombre</label><input type="text" class="form-control" name="nombre" required></div>'
-        . '<div class="col-md-4"><label class="form-label">Categoría</label><input type="text" class="form-control" name="categoria" required></div>'
+        . '<div class="col-md-4"><label class="form-label">Categoría</label><select class="form-select" name="categoria" required>' . $createCategoryOptions . '</select></div>'
         . '<div class="col-md-4"><label class="form-label">Precio</label><input type="number" class="form-control" name="precio" min="0.01" step="0.01" required></div>'
         . '<div class="col-12"><label class="form-label">Descripción</label><textarea class="form-control" name="descripcion" rows="3" required></textarea></div>'
         . '<div class="col-12"><button type="submit" class="btn btn-danger"><i class="bi bi-plus-circle me-1"></i>Crear plato</button></div>'
@@ -194,9 +213,10 @@ if (isLoggedIn() && !isAdmin()) {
     $favoriteIds = $favoritosModel->getFavoriteIdsByUser((int) $_SESSION['user_id']);
 }
 
-$sort = $_GET['sort'] ?? 'default';
+$sort = $_GET['sort'] ?? 'categoria_asc';
 $sortOptions = [
-    'default' => 'Orden por defecto',
+    'categoria_asc' => 'Orden del menú',
+    'categoria_desc' => 'Orden del menú (reverso)',
     'precio_asc' => 'Precio: menor a mayor',
     'precio_desc' => 'Precio: mayor a menor',
     'nombre_asc' => 'Nombre: A-Z',

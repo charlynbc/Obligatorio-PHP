@@ -2,12 +2,24 @@
 // Archivo: app/views/confirmacion.php
 
 $minutos   = (int) $pedido['minutos'];
+$compraId  = (int) ($pedido['compra_id'] ?? 0);
 $totalFmt  = number_format((float) $pedido['total'], 2);
 $horas     = intdiv($minutos, 60);
 $mins      = $minutos % 60;
-$tiempoStr = $horas > 0
-    ? "1 hora y {$mins} minutos"
-    : "{$minutos} minutos";
+$itemsTotales = 0;
+$tiempoPartes = [];
+
+if ($horas > 0) {
+    $tiempoPartes[] = $horas === 1 ? '1 hora' : $horas . ' horas';
+}
+
+if ($mins > 0) {
+    $tiempoPartes[] = $mins === 1 ? '1 minuto' : $mins . ' minutos';
+}
+
+$tiempoStr = empty($tiempoPartes)
+    ? 'menos de 1 minuto'
+    : implode(' y ', $tiempoPartes);
 
 // Navbar igual que el carrito
 require_once BASE_PATH . 'app/models/CarritoModel.php';
@@ -29,6 +41,7 @@ foreach ($pedido['items'] as $item) {
     $nombre   = htmlspecialchars($item['nombre']);
     $cantidad = (int) $item['cantidad'];
     $subtotal = number_format((float) $item['precio'] * $cantidad, 2);
+    $itemsTotales += $cantidad;
     $filas .= '<tr>'
         . '<td>' . $nombre . '</td>'
         . '<td class="text-center">' . $cantidad . '</td>'
@@ -84,6 +97,10 @@ foreach ($pedido['items'] as $item) {
                 <div class="spinner-icon mb-2">🍳</div>
                 <h3 class="fw-bold mb-1">¡Compra Realizada!</h3>
                 <p class="mb-0 fs-5">Preparando tu pedido...</p>
+                <div class="d-flex justify-content-center gap-2 flex-wrap mt-3">
+                    <span class="badge rounded-pill text-bg-light px-3 py-2">Pedido #<?= htmlspecialchars((string) $compraId) ?></span>
+                    <span class="badge rounded-pill text-bg-light px-3 py-2"><?= htmlspecialchars((string) $itemsTotales) ?> <?= $itemsTotales === 1 ? 'unidad' : 'unidades' ?></span>
+                </div>
             </div>
 
             <!-- Tiempo estimado -->
@@ -122,8 +139,14 @@ foreach ($pedido['items'] as $item) {
                 </div>
             </div>
 
-            <div class="text-center">
-                <a href="/" class="btn btn-primary px-4">
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <a href="/?controller=Carrito&action=comprobante&id=<?= $compraId ?>" class="btn btn-primary px-4">
+                    <i class="bi bi-receipt me-1"></i>Ver comprobante
+                </a>
+                <a href="/?controller=Usuario&action=perfil#historial-compras" class="btn btn-outline-secondary px-4">
+                    <i class="bi bi-clock-history me-1"></i>Ir al historial
+                </a>
+                <a href="/" class="btn btn-outline-dark px-4">
                     <i class="bi bi-house me-1"></i>Volver al menú
                 </a>
             </div>

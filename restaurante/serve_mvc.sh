@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-# Ejecuta el servidor PHP nativo apuntando a la raíz del proyecto MVC.
-# El Front Controller es restaurante/index.php
+# Ejecuta el servidor PHP nativo apuntando al Front Controller MVC.
+# El Front Controller real es restaurante/public/index.php
 # Accede en: http://localhost:8080
 
 PORT=${1:-8080}

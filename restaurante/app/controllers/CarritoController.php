@@ -49,6 +49,25 @@ class CarritoController {
         exit;
     }
 
+    // POST: restar una unidad de un plato en el carrito
+    public function restar() {
+        $this->requireCliente();
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /?controller=Carrito&action=index');
+            exit;
+        }
+        verifyCsrf();
+
+        $platoId = isset($_POST['plato_id']) ? (int) $_POST['plato_id'] : 0;
+        if ($platoId > 0) {
+            $model = new CarritoModel();
+            $model->restar((int) $_SESSION['user_id'], $platoId);
+        }
+
+        header('Location: /?controller=Carrito&action=index');
+        exit;
+    }
+
     // POST: procesar pago ficticio
     public function pagar() {
         $this->requireCliente();
@@ -117,6 +136,27 @@ class CarritoController {
         $pedido = $_SESSION['pedido_confirmado'];
         unset($_SESSION['pedido_confirmado']); // consumir una sola vez
         require_once BASE_PATH . 'app/views/confirmacion.php';
+    }
+
+    // GET: comprobante persistente de una compra previa del usuario
+    public function comprobante() {
+        $this->requireCliente();
+
+        $compraId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        if ($compraId <= 0) {
+            header('Location: /?controller=Usuario&action=perfil#historial-compras');
+            exit;
+        }
+
+        $comprasModel = new ComprasModel();
+        $compra = $comprasModel->getCompraByIdForUser($compraId, (int) $_SESSION['user_id']);
+
+        if ($compra === null) {
+            header('Location: /?controller=Usuario&action=perfil#historial-compras');
+            exit;
+        }
+
+        require_once BASE_PATH . 'app/views/carrito/comprobante.php';
     }
 
     // POST: eliminar un plato del carrito

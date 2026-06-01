@@ -50,6 +50,26 @@ class CarritoModel {
         }
     }
 
+    // Restar una unidad; si llega a 0, eliminar el item
+    public function restar(int $userId, int $platoId): void {
+        $stmt = $this->conn->prepare(
+            'UPDATE carrito_items
+             SET cantidad = cantidad - 1, updated_at = datetime("now")
+             WHERE user_id = :user_id AND plato_id = :plato_id'
+        );
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindParam(':plato_id', $platoId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $delete = $this->conn->prepare(
+            'DELETE FROM carrito_items
+             WHERE user_id = :user_id AND plato_id = :plato_id AND cantidad <= 0'
+        );
+        $delete->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $delete->bindParam(':plato_id', $platoId, PDO::PARAM_INT);
+        $delete->execute();
+    }
+
     // Eliminar un item del carrito
     public function eliminar(int $userId, int $platoId): void {
         $stmt = $this->conn->prepare(

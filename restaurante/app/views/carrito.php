@@ -42,6 +42,21 @@ if (empty($items)) {
         $subtotal  = number_format((float) $item['precio'] * (int) $item['cantidad'], 2);
         $platoId   = (int) $item['plato_id'];
         $cantidad  = (int) $item['cantidad'];
+        $cantidadControls = '<div class="d-inline-flex align-items-center gap-2">'
+            . '<form method="POST" action="/?controller=Carrito&action=restar" class="d-inline">'
+            . $csrfField
+            . '<input type="hidden" name="plato_id" value="' . $platoId . '">'
+            . '<button type="submit" class="btn btn-outline-secondary btn-sm px-2 py-0" aria-label="Restar una unidad de ' . $nombre . '">'
+            . '<i class="bi bi-dash-lg"></i>'
+            . '</button></form>'
+            . '<span class="fw-semibold">' . $cantidad . '</span>'
+            . '<form method="POST" action="/?controller=Carrito&action=agregar" class="d-inline">'
+            . $csrfField
+            . '<input type="hidden" name="plato_id" value="' . $platoId . '">'
+            . '<button type="submit" class="btn btn-outline-secondary btn-sm px-2 py-0" aria-label="Sumar una unidad de ' . $nombre . '">'
+            . '<i class="bi bi-plus-lg"></i>'
+            . '</button></form>'
+            . '</div>';
 
         if (!empty($item['imagen_url'])) {
             $img = '<img src="' . htmlspecialchars($item['imagen_url']) . '" alt="' . $nombre
@@ -55,7 +70,7 @@ if (empty($items)) {
         $rows .= '<tr>'
             . '<td class="align-middle">' . $img . '</td>'
             . '<td class="align-middle fw-semibold">' . $nombre . '</td>'
-            . '<td class="align-middle text-center">' . $cantidad . '</td>'
+            . '<td class="align-middle text-center">' . $cantidadControls . '</td>'
             . '<td class="align-middle text-end">$' . $precio . '</td>'
             . '<td class="align-middle text-end fw-bold">$' . $subtotal . '</td>'
             . '<td class="align-middle text-center">'
