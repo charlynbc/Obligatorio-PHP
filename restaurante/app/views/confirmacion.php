@@ -41,19 +41,17 @@ foreach ($pedido['items'] as $item) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¡Pedido Confirmado! - Restaurante</title>
+    <title>¡Pedido Confirmado! - Mangiare a presto</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/mangiare.css">
     <style>
         @keyframes pulse-bg {
-            0%, 100% { background-color: #198754; }
-            50%       { background-color: #0f5132; }
+            0%, 100% { background-color: #1f6b4f; }
+            50%       { background-color: #174d39; }
         }
-        .banner-pedido {
+        .confirm-banner {
             animation: pulse-bg 2s ease-in-out infinite;
-            border-radius: 0.5rem;
-            color: #fff;
-            padding: 1.5rem 2rem;
             text-align: center;
         }
         @keyframes spin {
@@ -66,20 +64,23 @@ foreach ($pedido['items'] as $item) {
         }
     </style>
 </head>
-<body class="bg-light">
+<body class="brand-page confirmation-page">
 
-    <nav class="navbar navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-dark mangiare-navbar shadow-sm">
         <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand fw-bold fs-5" href="/">🍽️ Nuestro Restaurante</a>
+            <a class="navbar-brand brand-mark" href="/">
+                <span class="brand-title">Mangiare a presto</span>
+                <span class="brand-subtitle">cucina italiana · pedidos al momento</span>
+            </a>
             <?= $navActions ?>
         </div>
     </nav>
 
     <div class="container py-5 d-flex justify-content-center">
-        <div style="width:100%; max-width:560px;">
+        <div class="confirm-shell">
 
             <!-- Banner principal -->
-            <div class="banner-pedido mb-4 shadow">
+            <div class="confirm-banner mb-4 shadow">
                 <div class="spinner-icon mb-2">🍳</div>
                 <h3 class="fw-bold mb-1">¡Compra Realizada!</h3>
                 <p class="mb-0 fs-5">Preparando tu pedido...</p>
@@ -95,7 +96,7 @@ foreach ($pedido['items'] as $item) {
             </div>
 
             <!-- Resumen del pedido -->
-            <div class="card shadow-sm mb-4">
+            <div class="card page-card confirm-summary shadow-sm mb-4">
                 <div class="card-header bg-dark text-white fw-semibold">
                     <i class="bi bi-receipt me-2"></i>Resumen del pedido
                 </div>
@@ -122,7 +123,7 @@ foreach ($pedido['items'] as $item) {
             </div>
 
             <div class="text-center">
-                <a href="/" class="btn btn-primary">
+                <a href="/" class="btn btn-primary px-4">
                     <i class="bi bi-house me-1"></i>Volver al menú
                 </a>
             </div>

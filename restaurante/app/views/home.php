@@ -285,12 +285,12 @@ if (!empty($menus)) {
         }
 
         $menuCards .= '<div class="col-sm-6 col-md-4 col-xl-3">'
-            . '<div class="card h-100 shadow-sm">'
+            . '<div class="card menu-card h-100 shadow-sm">'
             . $imagenHtml
             . '<div class="card-body d-flex flex-column">'
-            . '<h5 class="card-title mb-1">' . $nombre . '</h5>'
-            . '<span class="badge bg-secondary mb-2 align-self-start">' . $categoria . '</span>'
-            . '<p class="card-text small text-muted flex-grow-1">' . $descripcion . '</p>'
+            . '<h5 class="card-title menu-card-title mb-1">' . $nombre . '</h5>'
+            . '<span class="badge menu-category mb-2 align-self-start">' . $categoria . '</span>'
+            . '<p class="card-text menu-description small text-muted flex-grow-1">' . $descripcion . '</p>'
             . '<p class="precio mt-auto mb-2">$' . $precio . '</p>'
             . $carritoBtn
             . $favoritoBtn
@@ -301,7 +301,7 @@ if (!empty($menus)) {
             . '</div>';
     }
 } else {
-    $menuCards = '<p class="text-muted">Actualmente no hay platos disponibles en el menú.</p>';
+    $menuCards = '<p class="text-muted section-empty">Actualmente no hay platos disponibles en la carta.</p>';
 }
 
 // ── Renderizar template ───────────────────────────────────────────────────────
@@ -314,7 +314,7 @@ if ($template === false) {
 }
 
 echo str_replace(
-    ['{{NAV_ACTIONS}}', '{{MENU_ALERT}}', '{{ADMIN_PANEL}}', '{{SORT_CONTROLS}}', '{{MENU_CARDS}}', '{{PAGE_TITLE}}', '{{PAGE_SUBTITLE}}'],
-    [$navActions,       $menuAlert,        $adminPanel,      $sortHtml,          $menuCards,       isAdmin() ? 'Panel Administrativo' : 'Bienvenido a Nuestro Restaurante', isAdmin() ? 'Gestioná ventas, menú y métricas del negocio desde un solo lugar.' : 'Explorá nuestro menú y encontrá tus platos favoritos'],
+    ['{{NAV_ACTIONS}}', '{{MENU_ALERT}}', '{{ADMIN_PANEL}}', '{{SORT_CONTROLS}}', '{{MENU_CARDS}}', '{{BROWSER_TITLE}}', '{{PAGE_TITLE}}', '{{PAGE_SUBTITLE}}'],
+    [$navActions,       $menuAlert,        $adminPanel,      $sortHtml,          $menuCards,       isAdmin() ? 'Sala de gestión' : 'Inicio', isAdmin() ? 'Sala de gestión' : 'Mangiare a presto', isAdmin() ? 'Gestioná ventas, menú y métricas del restaurante desde un solo lugar.' : 'Pastas artesanales, clásicos italianos y un menú pensado para pedir sin fricción.'],
     $template
 );

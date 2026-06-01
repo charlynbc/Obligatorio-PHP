@@ -3,6 +3,8 @@
 
 require_once BASE_PATH . 'app/models/CarritoModel.php';
 require_once BASE_PATH . 'app/models/ComprasModel.php';
+require_once BASE_PATH . 'app/models/MailService.php';
+require_once BASE_PATH . 'app/config/Mail.php';
 
 class CarritoController {
 
@@ -69,13 +71,31 @@ class CarritoController {
         $compraId = $comprasModel->createCompra($userId, $items);
 
         $minutos = rand(30, 75);
+        $total   = array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $items));
+
+        // ── Enviar email de confirmación al cliente ───────────────────────────
+        require_once BASE_PATH . 'app/models/UsuarioModel.php';
+        $usuarioModel = new UsuarioModel();
+        $usuario = $usuarioModel->findById($userId);
+
+        if ($usuario) {
+            MailService::enviarConfirmacionCompra(
+                $usuario['email'],
+                $usuario['name'],
+                [
+                    'compra_id' => $compraId,
+                    'total'     => $total,
+                    'items'     => $items,
+                ]
+            );
+        }
 
         // Guardar en sesión para mostrar en la vista de confirmación
         $_SESSION['pedido_confirmado'] = [
             'compra_id' => $compraId,
-            'minutos' => $minutos,
-            'items'   => $items,
-            'total'   => array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $items)),
+            'minutos'   => $minutos,
+            'items'     => $items,
+            'total'     => $total,
         ];
 
         // Vaciar el carrito

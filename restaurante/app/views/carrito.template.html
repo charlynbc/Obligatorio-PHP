@@ -3,28 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Carrito - Restaurante</title>
+    <title>Mi Carrito - Mangiare a presto</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/mangiare.css">
 </head>
-<body class="bg-light">
+<body class="brand-page">
 
-    <nav class="navbar navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-dark mangiare-navbar shadow-sm">
         <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand fw-bold fs-5" href="/">🍽️ Nuestro Restaurante</a>
+            <a class="navbar-brand brand-mark" href="/">
+                <span class="brand-title">Mangiare a presto</span>
+                <span class="brand-subtitle">cucina italiana · pedidos al momento</span>
+            </a>
             {{NAV_ACTIONS}}
         </div>
     </nav>
 
-    <div class="container py-4" style="max-width: 720px;">
-        <h4 class="fw-bold mb-4 border-bottom pb-2">
-            <i class="bi bi-cart3 me-2 text-primary"></i>Mi Carrito
-        </h4>
+    <div class="container py-4 page-shell narrow-shell">
+        <div class="section-intro mb-4">
+            <p class="eyebrow mb-2">Ordine</p>
+            <h2 class="section-title mb-2">
+                <i class="bi bi-cart3 section-icon me-2"></i>Mi Carrito
+            </h2>
+            <p class="content-lead mb-0">Revisá el pedido antes de confirmar tu compra y enviarlo a cocina.</p>
+        </div>
 
         {{CARRITO_CONTENT}}
 
         <div class="mt-3">
-            <a href="/" class="text-muted small">
+            <a href="/" class="link-soft small">
                 <i class="bi bi-arrow-left me-1"></i>Seguir comprando
             </a>
         </div>

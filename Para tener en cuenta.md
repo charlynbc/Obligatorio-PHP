@@ -1,1 +1,0 @@
-La base de datos se genera en php por laravel

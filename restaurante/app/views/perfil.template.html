@@ -3,26 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Perfil - Restaurante</title>
+    <title>Mi Perfil - Mangiare a presto</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/mangiare.css">
 </head>
-<body class="bg-light">
+<body class="brand-page">
 
-    <nav class="navbar navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-dark mangiare-navbar shadow-sm">
         <div class="container d-flex justify-content-between align-items-center">
-            <a class="navbar-brand fw-bold fs-5" href="/">🍽️ Nuestro Restaurante</a>
+            <a class="navbar-brand brand-mark" href="/">
+                <span class="brand-title">Mangiare a presto</span>
+                <span class="brand-subtitle">cucina italiana · pedidos al momento</span>
+            </a>
             {{NAV_ACTIONS}}
         </div>
     </nav>
 
-    <div class="container py-5 d-flex justify-content-center">
-        <div class="card shadow-sm" style="width: 100%; max-width: 500px;">
+    <div class="container py-5 d-flex justify-content-center page-shell">
+        <div class="card page-card shadow-sm" style="width: 100%; max-width: 560px;">
             <div class="card-body p-4">
-                <h4 class="card-title mb-1 fw-bold">
+                <p class="eyebrow mb-2">Il profilo</p>
+                <h4 class="card-title page-card-title mb-1 fw-bold">
                     <i class="bi bi-person-gear me-2 text-primary"></i>Mi Perfil
                 </h4>
-                <p class="text-muted small mb-4">{{ROLE_BADGE}} El email no puede modificarse.</p>
+                <p class="page-intro small mb-4">{{ROLE_BADGE}} Desde acá gestionás tus datos y seguís tu actividad dentro de Mangiare a presto.</p>
 
                 {{SUCCESS}}
                 {{ERROR}}
@@ -71,7 +76,7 @@
                 </form>
 
                 <div class="mt-3 text-center">
-                    <a href="/" class="text-muted small">
+                    <a href="/" class="link-soft small">
                         <i class="bi bi-arrow-left me-1"></i>Volver al menú
                     </a>
                 </div>

@@ -8,6 +8,9 @@ if (php_sapi_name() === 'cli-server' && is_file(__DIR__ . $_SERVER['REQUEST_URI'
 
 define('BASE_PATH', __DIR__ . '/../');
 
+// ── Autoloader de Composer (necesario para symfony/mailer y otras librerías) ──
+require_once BASE_PATH . 'vendor/autoload.php';
+
 // ── Sesión segura ──────────────────────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
