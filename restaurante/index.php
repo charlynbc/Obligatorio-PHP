@@ -1,8 +1,11 @@
 <?php
 // Archivo: index.php (Raíz del proyecto)
 
+// Define la ruta base del proyecto
+define('BASE_PATH', __DIR__ . '/');
+
 // 1. Requerir la conexión a la base de datos
-require_once 'app/config/Database.php';
+require_once BASE_PATH . 'app/config/Database.php';
 
 // 2. Capturar qué Controlador y qué Acción pide el usuario a través de la URL.
 // Si no piden nada, por defecto cargaremos el "MenuController" y la acción "index" (Homepage)

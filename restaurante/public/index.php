@@ -1,63 +1,86 @@
 <?php
 // Archivo: public/index.php — Front Controller MVC
 
-// Pasar archivos estáticos directamente (CSS, JS, imágenes) cuando se usa php -S
+// Pasar archivos estáticos directamente cuando se usa php -S
 if (php_sapi_name() === 'cli-server' && is_file(__DIR__ . $_SERVER['REQUEST_URI'])) {
     return false;
 }
 
-// Sesiones para autenticación básica (registro/login/logout)
+define('BASE_PATH', __DIR__ . '/../');
+
+// ── Autoloader de Composer (necesario para symfony/mailer y otras librerías) ──
+require_once BASE_PATH . 'vendor/autoload.php';
+
+// ── Sesión segura ──────────────────────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'secure'   => false,   // cambiar a true en producción con HTTPS
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
+// Generar token CSRF si no existe en sesión
 if (empty($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Define la ruta base del proyecto (un nivel arriba de public/)
-define('BASE_PATH', __DIR__ . '/../');
-
-// 1. Requerir la conexión a la base de datos y helpers base
-require_once BASE_PATH . 'app/config/Database.php';
-require_once BASE_PATH . 'app/Helpers/Auth.php';
-
-// 2. Capturar qué Controlador y qué Acción pide el usuario a través de la URL.
-// Si no piden nada, por defecto cargaremos el "MenuController" y la acción "index" (Homepage)
-$controllerName = isset($_GET['controller']) ? $_GET['controller'] . 'Controller' : 'MenuController';
-$actionName     = isset($_GET['action'])     ? $_GET['action']                    : 'index';
-
-// 3. Control centralizado de permisos por ruta
-//    Formato: 'Controlador' => ['accion1', 'accion2', ...]
-$adminOnlyRoutes = [
-    'Menu' => ['crear', 'guardar', 'editar', 'actualizar', 'eliminar'],
-];
-
-$baseController = str_replace('Controller', '', $controllerName);
-if (
-    isset($adminOnlyRoutes[$baseController]) &&
-    in_array($actionName, $adminOnlyRoutes[$baseController], true)
-) {
-    Auth::requireAdmin();
+// ── Helpers globales de autenticación ─────────────────────────────────────────
+function isLoggedIn(): bool {
+    return !empty($_SESSION['user_id']);
 }
 
-// 4. Construir la ruta del archivo del controlador que se está pidiendo
+function isAdmin(): bool {
+    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+}
+
+function csrfToken(): string {
+    return $_SESSION['csrf_token'] ?? '';
+}
+
+function verifyCsrf(): void {
+    $token = $_POST['csrf_token'] ?? '';
+    if (empty($token) || !hash_equals($_SESSION['csrf_token'] ?? '', $token)) {
+        http_response_code(403);
+        exit('Solicitud inválida.');
+    }
+}
+
+require_once BASE_PATH . 'app/config/Database.php';
+
+// ── Router seguro: whitelist de controladores ──────────────────────────────────
+// Previene Path Traversal: solo se permiten controladores conocidos
+$allowed = ['Menu', 'Usuario', 'Carrito', 'Favoritos'];
+$c = $_GET['controller'] ?? 'Menu';
+if (!in_array($c, $allowed, true)) {
+    http_response_code(404);
+    exit('Página no encontrada.');
+}
+$controllerName = $c . 'Controller';
+
+// Solo letras y números en el nombre de la acción (previene inyección de rutas)
+$actionName = $_GET['action'] ?? 'index';
+if (!preg_match('/^[a-zA-Z][a-zA-Z0-9]{0,49}$/', $actionName)) {
+    http_response_code(404);
+    exit('Página no encontrada.');
+}
+
 $controllerPath = BASE_PATH . 'app/controllers/' . $controllerName . '.php';
 
-// 5. Verificar si ese controlador existe físicamente en nuestras carpetas
-if (file_exists($controllerPath)) {
-    require_once $controllerPath;
-
-    // Instanciar el controlador (ej. $controller = new MenuController())
-    $controller = new $controllerName();
-
-    // Verificar si el método (la acción) existe dentro de ese controlador
-    if (method_exists($controller, $actionName)) {
-        // Ejecutar la acción
-        $controller->$actionName();
-    } else {
-        echo "Error 404: La acción '$actionName' no existe en el controlador '$controllerName'.";
-    }
-} else {
-    echo "Error 404: El controlador '$controllerName' no fue encontrado.";
+if (!file_exists($controllerPath)) {
+    http_response_code(404);
+    exit('Página no encontrada.');
 }
+
+require_once $controllerPath;
+$controller = new $controllerName();
+
+if (!method_exists($controller, $actionName)) {
+    http_response_code(404);
+    exit('Página no encontrada.');
+}
+
+$controller->$actionName();

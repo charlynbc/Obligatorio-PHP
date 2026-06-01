@@ -1,227 +1,254 @@
 <?php
 // Archivo: app/controllers/MenuController.php
 
-require_once BASE_PATH . 'app/Models/MenuModel.php';
-require_once BASE_PATH . 'app/Helpers/ImageUploader.php';
+require_once BASE_PATH . 'app/models/MenuModel.php';
+require_once BASE_PATH . 'app/models/ComprasModel.php';
+require_once BASE_PATH . 'app/models/UsuarioModel.php';
 
 class MenuController {
 
-    private $menuModel;
-
-    public function __construct() {
-        $this->menuModel = new MenuModel();
-    }
-
-    private function requireAdmin() {
-        if (empty($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'admin') {
-            header('Location: /?controller=Usuario&action=login');
-            exit;
+    private function requireAdmin(): void {
+        if (!isAdmin()) {
+            http_response_code(403);
+            exit('Acceso denegado. Solo los administradores pueden realizar esta acción.');
         }
     }
 
-    private function requireValidCsrfToken() {
-        $sessionToken = $_SESSION['csrf_token'] ?? '';
-        $requestToken = $_POST['csrf_token'] ?? '';
+    private function getValidatedMenuInput(): array {
+        $nombre = trim($_POST['nombre'] ?? '');
+        $descripcion = trim($_POST['descripcion'] ?? '');
+        $categoria = trim($_POST['categoria'] ?? '');
+        $precio = str_replace(',', '.', trim((string) ($_POST['precio'] ?? '')));
 
-        if (!is_string($sessionToken) || !is_string($requestToken) || $sessionToken === '' || !hash_equals($sessionToken, $requestToken)) {
-            http_response_code(419);
-            echo 'Sesión expirada o token CSRF inválido.';
+        if ($nombre === '' || $descripcion === '' || $categoria === '' || $precio === '') {
+            header('Location: /?menu_error=campos');
             exit;
         }
+
+        if (!is_numeric($precio) || (float) $precio <= 0) {
+            header('Location: /?menu_error=precio');
+            exit;
+        }
+
+        return [$nombre, $descripcion, (float) $precio, $categoria];
     }
 
+    // La acción "index" es la que definimos por defecto en nuestro enrutador principal
     public function index() {
-        $orderBy = $_GET['orden'] ?? 'id';
-        $menus = $this->menuModel->getAllMenus($orderBy);
+        $menuModel = new MenuModel();
+        $sort = $_GET['sort'] ?? 'default';
+        $menus = $menuModel->getAllMenus($sort);
+        $editPlato = null;
+        $topSelling = [];
+        $salesSummary = [
+            'total_local' => 0,
+            'total_online' => 0,
+            'total_general' => 0,
+            'ventas_locales' => 0,
+            'ventas_online' => 0,
+        ];
+
+        if (isAdmin() && isset($_GET['edit_plato'])) {
+            $editPlatoId = (int) $_GET['edit_plato'];
+            if ($editPlatoId > 0) {
+                $editPlato = $menuModel->findById($editPlatoId);
+            }
+        }
+
+        if (isAdmin()) {
+            $comprasModel = new ComprasModel();
+            $topSelling = $comprasModel->getTopSellingPlatos();
+            $salesSummary = $comprasModel->getSalesSummary();
+        }
+
         require_once BASE_PATH . 'app/views/home.php';
     }
 
-    public function crear() {
+    public function localSale() {
         $this->requireAdmin();
 
-        $error = '';
-        $menu = [
-            'nombre' => '',
-            'descripcion' => '',
-            'precio' => '',
-            'categoria' => '',
-            'imagen_url' => '',
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /');
+            exit;
+        }
+
+        verifyCsrf();
+
+        $menuModel = new MenuModel();
+        $menus = $menuModel->getAllMenus();
+        $items = [];
+
+        foreach ($menus as $plato) {
+            $cantidad = isset($_POST['cantidad_' . $plato['id']]) ? (int) $_POST['cantidad_' . $plato['id']] : 0;
+            if ($cantidad > 0) {
+                $items[] = [
+                    'plato_id' => (int) $plato['id'],
+                    'cantidad' => $cantidad,
+                    'precio' => (float) $plato['precio'],
+                ];
+            }
+        }
+
+        if (empty($items)) {
+            header('Location: /?local_error=sin_items');
+            exit;
+        }
+
+        $usuarioModel = new UsuarioModel();
+        $localUserId = $usuarioModel->getOrCreateLocalSaleUserId();
+
+        $comprasModel = new ComprasModel();
+        $comprasModel->createCompra($localUserId, $items);
+
+        header('Location: /?local_status=ok');
+        exit;
+    }
+
+    public function create() {
+        $this->requireAdmin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /');
+            exit;
+        }
+
+        verifyCsrf();
+        [$nombre, $descripcion, $precio, $categoria] = $this->getValidatedMenuInput();
+
+        $menuModel = new MenuModel();
+        $menuModel->create($nombre, $descripcion, $precio, $categoria);
+
+        header('Location: /?menu_status=created');
+        exit;
+    }
+
+    public function update() {
+        $this->requireAdmin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /');
+            exit;
+        }
+
+        verifyCsrf();
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+        if ($id <= 0) {
+            header('Location: /?menu_error=id');
+            exit;
+        }
+
+        [$nombre, $descripcion, $precio, $categoria] = $this->getValidatedMenuInput();
+
+        $menuModel = new MenuModel();
+        if (!$menuModel->findById($id)) {
+            header('Location: /?menu_error=noexiste');
+            exit;
+        }
+
+        $menuModel->update($id, $nombre, $descripcion, $precio, $categoria);
+
+        header('Location: /?menu_status=updated');
+        exit;
+    }
+
+    public function delete() {
+        $this->requireAdmin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /');
+            exit;
+        }
+
+        verifyCsrf();
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+        if ($id <= 0) {
+            header('Location: /?menu_error=id');
+            exit;
+        }
+
+        $menuModel = new MenuModel();
+        $plato = $menuModel->findById($id);
+        if (!$plato) {
+            header('Location: /?menu_error=noexiste');
+            exit;
+        }
+
+        $menuModel->delete($id);
+
+        if (!empty($plato['imagen_url']) && str_starts_with($plato['imagen_url'], '/img/')) {
+            $imagePath = BASE_PATH . 'public' . $plato['imagen_url'];
+            if (is_file($imagePath)) {
+                @unlink($imagePath);
+            }
+        }
+
+        header('Location: /?menu_status=deleted');
+        exit;
+    }
+
+    // Acción para subir/actualizar la imagen de un plato (solo admin)
+    public function upload() {
+        $this->requireAdmin();
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header('Location: /');
+            exit;
+        }
+
+        // ── Verificar token CSRF ──────────────────────────────────────────────
+        verifyCsrf();
+
+        $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+        if ($id <= 0) {
+            header('Location: /');
+            exit;
+        }
+
+        if (!isset($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
+            header('Location: /?upload_error=1');
+            exit;
+        }
+
+        $file = $_FILES['imagen'];
+
+        // Validar tipo MIME real del archivo (no confiar en extensión ni Content-Type)
+        $finfo    = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+        $extMap   = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/gif'  => 'gif',
+            'image/webp' => 'webp',
         ];
 
-        require_once BASE_PATH . 'app/views/menu/crear.php';
-    }
-
-    public function guardar() {
-        $this->requireAdmin();
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /?controller=Menu&action=crear');
+        if (!array_key_exists($mimeType, $extMap)) {
+            header('Location: /?upload_error=tipo');
             exit;
         }
 
-        $this->requireValidCsrfToken();
-
-        $nombre = trim($_POST['nombre'] ?? '');
-        $descripcion = trim($_POST['descripcion'] ?? '');
-        $precio = trim($_POST['precio'] ?? '');
-        $categoria = trim($_POST['categoria'] ?? '');
-
-        if ($nombre === '' || $descripcion === '' || $precio === '' || !is_numeric($precio) || (float) $precio < 0) {
-            $error = 'Completá nombre, descripción y un precio válido.';
-            $menu = [
-                'nombre' => $nombre,
-                'descripcion' => $descripcion,
-                'precio' => $precio,
-                'categoria' => $categoria,
-                'imagen_url' => '',
-            ];
-            require_once BASE_PATH . 'app/views/menu/crear.php';
-            return;
-        }
-
-        // Procesar imagen
-        $imagenUrl = '';
-        if (!empty($_FILES['imagen'])) {
-            $uploadResult = ImageUploader::upload($_FILES['imagen'], null, BASE_PATH);
-            if (!$uploadResult['success']) {
-                $error = $uploadResult['error'];
-                $menu = [
-                    'nombre' => $nombre,
-                    'descripcion' => $descripcion,
-                    'precio' => $precio,
-                    'categoria' => $categoria,
-                    'imagen_url' => '',
-                ];
-                require_once BASE_PATH . 'app/views/menu/crear.php';
-                return;
-            }
-            $imagenUrl = $uploadResult['path'];
-        }
-
-        $created = $this->menuModel->createMenu($nombre, $descripcion, $precio, $categoria, $imagenUrl);
-        if (!$created) {
-            $error = 'No se pudo crear el plato. Intentá nuevamente.';
-            $menu = [
-                'nombre' => $nombre,
-                'descripcion' => $descripcion,
-                'precio' => $precio,
-                'categoria' => $categoria,
-                'imagen_url' => '',
-            ];
-            require_once BASE_PATH . 'app/views/menu/crear.php';
-            return;
-        }
-
-        header('Location: /?menu_success=created');
-        exit;
-    }
-
-    public function editar() {
-        $this->requireAdmin();
-
-        $id = $_GET['id'] ?? null;
-        if ($id === null || !ctype_digit((string) $id)) {
-            http_response_code(400);
-            echo 'ID de plato inválido.';
-            return;
-        }
-
-        $menu = $this->menuModel->findById((int) $id);
-        if (!$menu) {
-            http_response_code(404);
-            echo 'Plato no encontrado.';
-            return;
-        }
-
-        $error = '';
-        require_once BASE_PATH . 'app/views/menu/editar.php';
-    }
-
-    public function actualizar() {
-        $this->requireAdmin();
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /');
+        // Limitar tamaño a 5 MB
+        if ($file['size'] > 5 * 1024 * 1024) {
+            header('Location: /?upload_error=tamano');
             exit;
         }
 
-        $this->requireValidCsrfToken();
+        $safeExt    = $extMap[$mimeType];
+        $filename   = 'plato_' . $id . '_' . time() . '.' . $safeExt;
+        $uploadDir  = BASE_PATH . 'public/img/';
+        $uploadPath = $uploadDir . $filename;
 
-        $id = $_POST['id'] ?? null;
-        $nombre = trim($_POST['nombre'] ?? '');
-        $descripcion = trim($_POST['descripcion'] ?? '');
-        $precio = trim($_POST['precio'] ?? '');
-        $categoria = trim($_POST['categoria'] ?? '');
-
-        if ($id === null || !ctype_digit((string) $id)) {
-            http_response_code(400);
-            echo 'ID de plato inválido.';
-            return;
-        }
-
-        if ($nombre === '' || $descripcion === '' || $precio === '' || !is_numeric($precio) || (float) $precio < 0) {
-            $error = 'Completá nombre, descripción y un precio válido.';
-            $menu = $this->menuModel->findById((int) $id);
-            require_once BASE_PATH . 'app/views/menu/editar.php';
-            return;
-        }
-
-        // Obtener plato actual
-        $currentMenu = $this->menuModel->findById((int) $id);
-        $imagenUrl = $currentMenu['imagen_url'] ?? '';
-
-        // Procesar imagen si se subió una nueva
-        if (!empty($_FILES['imagen'])) {
-            $uploadResult = ImageUploader::upload($_FILES['imagen'], $imagenUrl, BASE_PATH);
-            if (!$uploadResult['success']) {
-                $error = $uploadResult['error'];
-                $menu = $currentMenu;
-                require_once BASE_PATH . 'app/views/menu/editar.php';
-                return;
-            }
-            $imagenUrl = $uploadResult['path'];
-        }
-
-        $updated = $this->menuModel->updateMenu((int) $id, $nombre, $descripcion, $precio, $categoria, $imagenUrl);
-        if (!$updated) {
-            $error = 'No se pudo actualizar el plato. Intentá nuevamente.';
-            $menu = $currentMenu;
-            require_once BASE_PATH . 'app/views/menu/editar.php';
-            return;
-        }
-
-        header('Location: /?menu_success=updated');
-        exit;
-    }
-
-    public function eliminar() {
-        $this->requireAdmin();
-
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            header('Location: /');
+        if (!move_uploaded_file($file['tmp_name'], $uploadPath)) {
+            header('Location: /?upload_error=guardado');
             exit;
         }
 
-        $this->requireValidCsrfToken();
+        $imageUrl  = '/img/' . $filename;
+        $menuModel = new MenuModel();
+        $menuModel->updateImageUrl($id, $imageUrl);
 
-        $id = $_POST['id'] ?? null;
-        if ($id === null || !ctype_digit((string) $id)) {
-            http_response_code(400);
-            echo 'ID de plato inválido.';
-            return;
-        }
-
-        // Obtener el plato para eliminar su imagen
-        $menu = $this->menuModel->findById((int) $id);
-        if ($menu && !empty($menu['imagen_url'])) {
-            $imagePath = BASE_PATH . 'public/' . $menu['imagen_url'];
-            if (file_exists($imagePath)) {
-                unlink($imagePath);
-            }
-        }
-
-        $this->menuModel->deleteMenu((int) $id);
-        header('Location: /?menu_success=deleted');
+        header('Location: /');
         exit;
     }
 }

@@ -1,5 +1,5 @@
 <?php
-// Archivo: app/Models/MenuModel.php
+// Archivo: app/models/MenuModel.php
 
 require_once BASE_PATH . 'app/config/Database.php';
 
@@ -12,78 +12,81 @@ class MenuModel {
         $this->conn = $db->getConnection();
     }
 
-    public function getAllMenus(string $orderBy = 'id'): array {
-        $allowed = [
-            'precio_asc'  => 'precio ASC',
-            'precio_desc' => 'precio DESC',
-            'nombre_asc'  => 'nombre ASC',
-            'nombre_desc' => 'nombre DESC',
-        ];
+    // Método para obtener todos los platos del menú
+    public function getAllMenus(string $sort = 'default') {
+        $orderBy = match ($sort) {
+            'precio_asc' => ' ORDER BY precio ASC, nombre ASC',
+            'precio_desc' => ' ORDER BY precio DESC, nombre ASC',
+            'nombre_asc' => ' ORDER BY nombre ASC',
+            'nombre_desc' => ' ORDER BY nombre DESC',
+            default => ' ORDER BY id ASC',
+        };
 
-        $orderClause = $allowed[$orderBy] ?? 'id ASC';
-        $query = "SELECT * FROM platos ORDER BY " . $orderClause;
+        $query = 'SELECT * FROM platos' . $orderBy;
 
+        // Preparamos la consulta (buena práctica de seguridad con PDO)
         $stmt = $this->conn->prepare($query);
+
+        // Ejecutamos la consulta
         $stmt->execute();
+
+        // FETCH_ASSOC devuelve los datos como arreglo asociativo
+        // (ej: $fila['nombre'] en lugar de $fila[1])
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function findById($id) {
-        $query = "SELECT * FROM platos WHERE id = :id LIMIT 1";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(':id', (int) $id, PDO::PARAM_INT);
+    public function findById(int $id): ?array {
+        $stmt = $this->conn->prepare('SELECT * FROM platos WHERE id = :id LIMIT 1');
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt->execute();
-
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
     }
 
-    public function createMenu($nombre, $descripcion, $precio, $categoria, $imagenUrl) {
-        $query = "INSERT INTO platos (nombre, descripcion, precio, categoria, imagen_url, created_at, updated_at)
-                  VALUES (:nombre, :descripcion, :precio, :categoria, :imagen_url, :created_at, :updated_at)";
-
-        $stmt = $this->conn->prepare($query);
-        $now = date('Y-m-d H:i:s');
-
-        $stmt->bindValue(':nombre', $nombre);
-        $stmt->bindValue(':descripcion', $descripcion);
-        $stmt->bindValue(':precio', (float) $precio);
-        $stmt->bindValue(':categoria', $categoria !== '' ? $categoria : null);
-        $stmt->bindValue(':imagen_url', $imagenUrl !== '' ? $imagenUrl : null);
-        $stmt->bindValue(':created_at', $now);
-        $stmt->bindValue(':updated_at', $now);
-
-        return $stmt->execute();
+    public function create(string $nombre, string $descripcion, float $precio, string $categoria): void {
+        $stmt = $this->conn->prepare(
+            'INSERT INTO platos (nombre, descripcion, precio, categoria, created_at, updated_at)
+             VALUES (:nombre, :descripcion, :precio, :categoria, datetime("now"), datetime("now"))'
+        );
+        $stmt->bindParam(':nombre', $nombre);
+        $stmt->bindParam(':descripcion', $descripcion);
+        $stmt->bindParam(':precio', $precio);
+        $stmt->bindParam(':categoria', $categoria);
+        $stmt->execute();
     }
 
-    public function updateMenu($id, $nombre, $descripcion, $precio, $categoria, $imagenUrl) {
-        $query = "UPDATE platos
-                  SET nombre = :nombre,
-                      descripcion = :descripcion,
-                      precio = :precio,
-                      categoria = :categoria,
-                      imagen_url = :imagen_url,
-                      updated_at = :updated_at
-                  WHERE id = :id";
-
-        $stmt = $this->conn->prepare($query);
-
-        $stmt->bindValue(':id', (int) $id, PDO::PARAM_INT);
-        $stmt->bindValue(':nombre', $nombre);
-        $stmt->bindValue(':descripcion', $descripcion);
-        $stmt->bindValue(':precio', (float) $precio);
-        $stmt->bindValue(':categoria', $categoria !== '' ? $categoria : null);
-        $stmt->bindValue(':imagen_url', $imagenUrl !== '' ? $imagenUrl : null);
-        $stmt->bindValue(':updated_at', date('Y-m-d H:i:s'));
-
-        return $stmt->execute();
+    public function update(int $id, string $nombre, string $descripcion, float $precio, string $categoria): void {
+        $stmt = $this->conn->prepare(
+            'UPDATE platos
+             SET nombre = :nombre,
+                 descripcion = :descripcion,
+                 precio = :precio,
+                 categoria = :categoria,
+                 updated_at = datetime("now")
+             WHERE id = :id'
+        );
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindParam(':nombre', $nombre);
+        $stmt->bindParam(':descripcion', $descripcion);
+        $stmt->bindParam(':precio', $precio);
+        $stmt->bindParam(':categoria', $categoria);
+        $stmt->execute();
     }
 
-    public function deleteMenu($id) {
-        $query = "DELETE FROM platos WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindValue(':id', (int) $id, PDO::PARAM_INT);
+    public function delete(int $id): void {
+        $stmt = $this->conn->prepare('DELETE FROM platos WHERE id = :id');
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+    }
 
-        return $stmt->execute();
+    // Método para actualizar la URL de imagen de un plato
+    public function updateImageUrl($id, $imageUrl) {
+        $stmt = $this->conn->prepare(
+            "UPDATE platos SET imagen_url = :imagen_url WHERE id = :id"
+        );
+        $stmt->bindParam(':imagen_url', $imageUrl);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
     }
 }
 ?>

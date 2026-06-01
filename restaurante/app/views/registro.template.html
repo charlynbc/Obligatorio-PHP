@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrarse - Mangiare a presto</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="/css/mangiare.css">
+</head>
+<body class="brand-page auth-page">
+
+    <nav class="navbar navbar-dark mangiare-navbar shadow-sm">
+        <div class="container">
+            <a class="navbar-brand brand-mark" href="/">
+                <span class="brand-title">Mangiare a presto</span>
+                <span class="brand-subtitle">cucina italiana · pedidos al momento</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="container d-flex justify-content-center align-items-center auth-shell py-5">
+        <div class="card page-card shadow-sm" style="width: 100%; max-width: 480px;">
+            <div class="card-body p-4">
+                <p class="eyebrow mb-2">Nuova tavola</p>
+                <h4 class="card-title page-card-title mb-2 fw-bold">
+                    <i class="bi bi-person-plus-fill me-2 text-warning"></i>Crear Cuenta
+                </h4>
+                <p class="page-intro small mb-4">Registrate para comprar, guardar favoritos y seguir tu historial en Mangiare a presto.</p>
+
+                {{ERROR}}
+
+                <form method="POST" action="/?controller=Usuario&action=registro" novalidate>
+                    {{CSRF_FIELD}}
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="name" name="name"
+                               placeholder="Tu nombre" required autocomplete="name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email"
+                               placeholder="tu@email.com" required autocomplete="email">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" name="password"
+                               placeholder="Mínimo 8 caracteres" required autocomplete="new-password">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="confirm" class="form-label">Confirmar contraseña</label>
+                        <input type="password" class="form-control" id="confirm" name="confirm"
+                               placeholder="Repetí la contraseña" required autocomplete="new-password">
+                    </div>
+
+                    <button type="submit" class="btn btn-warning w-100 fw-semibold">
+                        <i class="bi bi-person-check-fill me-1"></i>Crear cuenta
+                    </button>
+                </form>
+
+                <hr class="my-3">
+                <p class="text-center mb-0 text-muted small">
+                    ¿Ya tenés cuenta?
+                    <a href="/?controller=Usuario&action=login">Iniciar sesión</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
