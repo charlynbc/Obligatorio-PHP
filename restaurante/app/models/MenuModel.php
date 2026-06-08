@@ -30,6 +30,8 @@ class MenuModel {
         $orderBy = match ($sort) {
             'categoria_asc' => ' ORDER BY ' . $categoryOrder . ' ASC, nombre ASC, id ASC',
             'categoria_desc' => ' ORDER BY ' . $categoryOrder . ' DESC, nombre ASC, id ASC',
+            'categoria_nombre_asc' => ' ORDER BY categoria COLLATE NOCASE ASC, nombre ASC, id ASC',
+            'categoria_nombre_desc' => ' ORDER BY categoria COLLATE NOCASE DESC, nombre ASC, id ASC',
             'precio_asc' => ' ORDER BY precio ASC, ' . $categoryOrder . ' ASC, nombre ASC',
             'precio_desc' => ' ORDER BY precio DESC, ' . $categoryOrder . ' ASC, nombre ASC',
             'nombre_asc' => ' ORDER BY nombre ASC, ' . $categoryOrder . ' ASC',
